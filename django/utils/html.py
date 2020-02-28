@@ -76,7 +76,7 @@ _json_script_escapes = {
 }
 
 
-def json_script(value, element_id):
+def json_script(value, element_id=None, **kwargs):
     """
     Escape all the HTML/XML special characters with their unicode escapes, so
     value is safe to be output anywhere except for inside a tag attribute. Wrap
@@ -84,9 +84,15 @@ def json_script(value, element_id):
     """
     from django.core.serializers.json import DjangoJSONEncoder
     json_str = json.dumps(value, cls=DjangoJSONEncoder).translate(_json_script_escapes)
+
+    attrs = {"id": escape(element_id), "type": "application/json"}
+    attrs.update({escape(key): escape(value) for key, value in kwargs})
+
+    attrs_str = mark_safe(' '.join(f'{key}="{value}"' for key, value in attrs.items()))
+
     return format_html(
-        '<script id="{}" type="application/json">{}</script>',
-        element_id, mark_safe(json_str)
+        '<script {}>{}</script>',
+        attrs_str, mark_safe(json_str)
     )
 
 
